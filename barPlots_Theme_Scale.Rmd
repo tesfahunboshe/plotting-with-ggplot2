@@ -1,0 +1,276 @@
+---
+title: "Bar Plots with ggplot2"
+author: "Tesfahun Tegene Boshe"
+date: "06/11/2021"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    code_folding: show
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Instructions
+
+* Find interesting dataset and prepare short report (in R Markdown) which will consist:
+  + short description of the dataset,
+  + 4 barplots which will present interesting relationships between variables,
+  + brief comments which describes obtained results.
+  + Then, edit theme of the graphs and all scales of the graph and prepare publication-ready plots.
+
+## Necessary packages
+
+```{r}
+
+requiredPackages = c("ggplot2","dplyr","tidyr")
+
+for(i in requiredPackages){if(!require(i,character.only = TRUE)) install.packages(i)}
+for(i in requiredPackages){if(!require(i,character.only = TRUE)) library(i,character.only = TRUE)}
+
+```
+
+## Dataset
+
+For this task, we will analyse the English Premier League seasons 2000 - 2020. The source data is available at: https://www.kaggle.com/saife245/english-premier-league.
+
+We will be using only the first 6 columns. The variables are explained below:
+
+*Variable*      | *Description*
+* X             |  number
+* Date          |  Date of the match   
+* HomeTeam      |  The team that played at home stadium
+* AwayReam      |  The team that played away from home
+* FTHG          |  Full time number of goals for the home team
+* FTAG          |  Full time number of goals for the away team
+
+```{r,echo=FALSE,eval = FALSE}
+setwd(your_path)
+```
+
+
+```{r}
+
+Data_PLeague <- read.csv2("Premier_league.csv", sep = ",")[,c(1:6)] # only the first 6 columns
+head(Data_PLeague)
+
+```
+
+Let's add a column for the winner team and a column for total number of columns. The value should be "draw" in case of a draw. 
+```{r}
+
+Data_PLeague$Winner <- ifelse(Data_PLeague$FTHG>Data_PLeague$FTAG,Data_PLeague$HomeTeam, ifelse(Data_PLeague$FTHG<Data_PLeague$FTAG,Data_PLeague$AwayTeam,"Draw"))
+
+Data_PLeague$GoalsScored <- factor(Data_PLeague$FTHG + Data_PLeague$FTAG) # define as factor
+```
+
+Let's convert the date from a character to date format. 
+```{r}
+Data_PLeague$Date <- as.Date(Data_PLeague$Date, "%d/%m/%y") # converts to date
+Data_PLeague$Year <- format(Data_PLeague$Date, format = "%Y")
+```
+
+## Plots
+
+### Plot1: Barplot of count of matches by total number of goals {.tabset}
+
+#### Before edit
+```{r}
+
+p1 <- ggplot(data = Data_PLeague, aes(x = Data_PLeague$FTHG + Data_PLeague$FTAG)) + 
+      geom_bar(stat = "count", color = "#3d195b", fill = "#3d195b") + 
+      labs(x = "Number of goals",
+           y = "Number of matches",
+           title = "Count of the number of matches by number of goals")
+
+p1
+```
+
+*Comments*
+
+* Most Premier League matches experience 1-3 goals. This feeds to the general consensus that the Premier League is very defensive. 
+
+
+
+#### After Edit
+```{r}
+
+p1 <- ggplot(data = Data_PLeague, aes(x = Data_PLeague$FTHG + Data_PLeague$FTAG)) + 
+      geom_bar(stat = "count", color = "#7a0d32", fill = "#7a0d32") + 
+      labs(x = "Number of goals",
+           y = "Number of matches",
+           title = "Count of the number of matches by number of goals") +
+      theme_minimal() +
+      theme(plot.title = element_text(hjust = 0.5),
+            panel.background = element_rect(fill = "#d1d6ce", colour = "#d1d6ce", size = 1), #panel background
+            plot.background = element_rect(colour = "#151414", size = 1) # plot background
+            ) + 
+       scale_x_discrete(limits = c(0:12))
+        
+      
+
+p1
+```
+
+### Plot2: Number of wins by team {.tabset}
+
+Data preparation
+```{r}
+winsByTeam <- Data_PLeague %>% 
+  group_by(Winner) %>% summarize(n_wins = n())%>% 
+  mutate(Winner2 = reorder(Winner, desc(n_wins))) %>% 
+  slice_max(n_wins, n = 7) # top 6 plus draws
+
+```
+
+#### Before edit
+```{r}
+
+p2 <- ggplot(data = winsByTeam[-1,], aes(x = Winner2, y = n_wins)) + # exclude draws
+      geom_col(color = "#7a0d32", fill = "#7a0d32") + # fill with premier league brand color
+      ggtitle('Number of wins of the top-6 Premier League teams') +
+      xlab('Team') +
+      ylab('Number of wins') + 
+      geom_text(aes(label = n_wins), vjust = -0.5, color = 'black',face = "bold", size = 3.5)
+
+p2
+```
+*Comments*
+
+* As of the season 2019/2020, Manchester United have had won the most games in the Premier League era followed by Chelsea. 
+* Manchester City and Tottenham had won the same number of games since the start of the Premier League era until the end of 2019/2020. 
+
+#### After edit
+
+```{r}
+p2 + theme_minimal() +
+     theme(plot.title = element_text(hjust = 0.5),
+          panel.background = element_rect(fill = "#d1d6ce", colour = "#d1d6ce", size = 1), #panel background
+          plot.background = element_rect(colour = "#151414", size = 1) # plot background
+        
+          ) + 
+     scale_y_continuous(breaks = seq(0, 600, by = 100), 
+               limits = c(0, 600),
+                ) 
+```
+
+### Plot3: Number of wins by Manchester United by year {.tabset}
+
+#### Before edit
+```{r}
+Data_PLeague_MU <- Data_PLeague[Data_PLeague$Winner == "Man United" & Data_PLeague$Year >=2011 ,]# the last decade
+
+p3 <- ggplot(data = Data_PLeague_MU, aes(x = Year)) + 
+      geom_bar(stat = "count",aes(y = ..count..), fill = "#DA020E")+
+      labs(x = "Year", 
+           y = "Number of wins",
+           title = "Manchester United number of wins per season")
+
+p3
+
+```
+*Comments*
+
+* 2012 registered the most wins for Man United. *Van Persie - Rooney* combination was the most lethal apparently. Of course defense wins games, as they say.   
+* The team has been falling in quality since the season 2013. *Fergie's* departure must have had something to do with that. 
+
+#### After edit
+```{r}
+
+p3 + theme_minimal() +
+     theme(plot.title = element_text(hjust = 0.5),
+          panel.background = element_rect(fill = "#d1d6ce", 
+                                          colour = "#d1d6ce", 
+                                          size = 1), #panel background
+          plot.background = element_rect(colour = "#151414", 
+                                         size = 1) # plot background
+          ) + 
+          scale_y_continuous(breaks = seq(0, 40, by = 5), 
+                     limits = c(0, 40),
+                      ) 
+```
+
+### Plot4: Number of matches drawn per year {.tabset}
+
+I believe this metric indicates how competitive the league has been across years. More number of draws indicating less competitiveness. 
+
+#### Before edit
+```{r}
+p4 <- ggplot(data = Data_PLeague[Data_PLeague$Winner=="Draw",],aes(x = Year)) + 
+      geom_bar(stat = "count", color = "#3d195b", fill = "#3d195b") + 
+      labs(x = "year", 
+           y = "Draws in a season",
+           title = "Number of matches drawn per year")
+
+p4
+```
+
+*Comments*
+
+* Generally, more and more matches ended at draw since the season 2003. Many boring matches :( 
+* 2018 was the exception to that. Most matches ended with a winner. 
+
+#### After edit
+```{r}
+p4 + 
+  scale_x_discrete(limits = c('2000','2005','2010','2015','2020'))+ 
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = .5),
+        
+        axis.title.x  = element_text(size = 12, hjust = 0.6), # labels of the x axis
+        axis.title.y  = element_text(size = 12, hjust = 0.6))
+  
+```
+
+
+### Plot5: Average Number of points per game {.tabset}
+
+#### Before edit
+Data preparation
+```{r}
+Data_PLeague$Points_HT <- ifelse(Data_PLeague$FTHG>Data_PLeague$FTAG,3,                                                ifelse(Data_PLeague$FTHG<Data_PLeague$FTAG,0,1))
+
+points_H_team <- Data_PLeague %>% 
+  group_by(HomeTeam) %>% summarize(avg_ppg = mean(Points_HT))%>% 
+  mutate(HomeTeam2 = reorder(HomeTeam, desc(avg_ppg))) %>%
+  slice_max(avg_ppg, n = 6)
+
+```
+
+plot
+
+```{r}
+p5 <- ggplot(data = points_H_team, aes(x = HomeTeam2, y = avg_ppg)) + 
+      geom_col(color = "#3d195b", fill = "#3d195b")+
+      geom_text(aes(label = round(avg_ppg,3)), vjust = -0.5, color = 'black', size = 3.5) + 
+      labs(x = "Team", 
+               y = "Points per game",
+               title = "Points per home match")
+
+p5
+```
+*Comments*
+
+* Despite the recent fall in the form, Man United remains the most successful interms of points per game. Arsenal and Chelsea follow with small margin. 
+
+
+#### After edit
+```{r}
+p5 + 
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5),
+      panel.background = element_rect(fill = "#d1d6ce", 
+                                      colour = "#d1d6ce", 
+                                      size = 1), #panel background
+      plot.background = element_rect(colour = "#151414", 
+                                     size = 1) # plot background
+      ) + 
+   scale_y_continuous(breaks = seq(0, 3, by = 0.5), # create more space above the plots
+                      limits = c(0, 3),
+                  ) 
+```
+

@@ -1,0 +1,136 @@
+---
+title: "Homework 1/ Scatter Plots with ggplot2 package"
+author: "Tesfahun Tegene Boshe"
+date: "04/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Instructions
+
+* Find interesting dataset and prepare short report (in R Markdown) which will consist:
+- short description of the dataset,
+- 3 scatterplots which will present interesting relationships between variables,
+- brief comments which describes obtained results.
+
+## Necessary packages
+
+```{r}
+
+# # install the libraries
+# install.packages('ggplot2')
+# install.packages('dplyr')
+# install.packages('tidyr')
+# install.packages('carData')
+
+# load the libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(carData) # source for the data
+```
+
+## Dataset
+
+For this task, Salaries dataset,The 2008-09 nine-month academic salary for Assistant Professors, Associate Professors and Professors in a college in the U.S  will be used.
+The data were collected as part of the on-going effort of the college's administration to monitor salary differences between male and female faculty members.
+
+*Variable*      | *Description*
+
+* rank          | a factor with levels AssocProf AsstProf Prof
+* discipline    | a factor with levels A (“theoretical” departments) or B (“applied” departments).
+* yrs.since.phd | years since PhD.
+* yrs.service   | years of service.
+* sex           | a factor with levels Female Male
+* salary        | nine-month salary, in dollars.
+
+```{r}
+data(Salary)
+```
+
+## plots
+
+### Plot 1. Salary vs years of service for each sex
+
+```{r}
+ggplot(data=Salaries, aes(x=yrs.service,y = salary, color=sex))+
+  geom_point() +
+  labs(x = "Years of Service")+
+  ggtitle("Salary vs Years of Service per sex") + 
+  geom_smooth(method = "lm", color = "black")
+```
+
+comments:
+
+* majority of the female professors are paid less than the market average
+* there is a positive correlation between years of service and salary variables. 
+* this is with the exception to the age group 40-60 years of service, where there is a general decrease in salary
+* with years of experience
+
+### Plot 2.1 Salary vs years since PHD for each rank 
+
+```{r}
+ggplot(data=Salaries, aes(x=yrs.since.phd,y = salary, color=rank))+
+  geom_point() +
+  labs(x = "Years since PHD")+
+  ggtitle("Salary vs Years since PHD")
+```
+
+
+Comments
+
+* Salaries increase with along the journey asstProf - AssociProf - Prof
+* For each category, there is a positive correlation between salary and years since PHD
+
+### Plot 2.2 Salary vs years since PHD for each discipline
+
+```{r}
+
+ggplot(data=Salaries, aes(x=yrs.since.phd,y = salary, color=discipline))+
+  geom_point() +
+  labs(x = "Years since PHD")+
+  ggtitle("Salary vs Years since PHD")
+```
+
+Comments:
+
+* applied departments pay more than theoretical departments
+
+### plot 2.3 Salary vs years since PHD for each rank X discipline
+
+```{r}
+Salaries$Rank_Disc <- paste(Salaries$rank,"_", Salaries$discipline) 
+# a new variable Rank_Disc is a cross product of rank and discipline
+
+ggplot(data=Salaries, aes(x=yrs.since.phd,y = salary, color=Rank_Disc))+
+  geom_point() +
+  labs(x = "Years since PHD")+
+  ggtitle("Salary vs Years since PHD")
+
+```
+
+Comments:
+
+* Professors in applied departments are of the highest market value
+* The properties in 2.1 and 2.2 are observed here too. 
+
+
+### Plot 3. Bar plot of counts of individuals per sex per discipline
+
+```{r}
+ggplot(data=Salaries, aes(x=discipline, fill=sex))+
+  geom_bar(stat="count", position="dodge") + #add position="dodge" to geom_bar to have the groups next to each other
+  labs(x = "Discipline")+
+  ggtitle("Sex distribution by discipline") +
+  scale_fill_manual(values=c("red", "blue")) 
+
+```
+
+Comments:
+
+* In both departments the majority of professors are male. 
+* There are more professors in theoretical departments than in applied - depatments
+  

@@ -1,0 +1,274 @@
+---
+title: "Homework 2/ Editing theme and scale of plots with ggplot2"
+author: "Tesfahun Tegene Boshe"
+date: "04/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Instructions
+
+* Find interesting dataset and prepare short report (in R Markdown) which will consist:
+- short description of the dataset,
+- 3 scatterplots which will present interesting relationships between variables,
+- brief comments which describes obtained results.
+- Then, edit theme of the graphs and all scales of the graph and prepare publication-ready plots.
+
+## Necessary packages
+
+```{r}
+
+requiredPackages = c("ggplot2","dplyr","tidyr","carData")
+
+for(i in requiredPackages){if(!require(i,character.only = TRUE)) install.packages(i)}
+for(i in requiredPackages){if(!require(i,character.only = TRUE)) library(i,character.only = TRUE)}
+
+```
+
+## Dataset
+
+For this task, Salaries dataset, containing the salary, sex and other attributes for Assistant Professors, Associate Professors and Professors in a college in the U.S  will be used. 
+
+The dataset is available with *carData* package. 
+The variables are as follows:
+
+*Variable*      | *Description*
+
+* rank          | a factor with levels AssocProf AsstProf Prof
+* discipline    | a factor with levels A (“theoretical” departments) or B (“applied” departments).
+* yrs.since.phd | years since PhD.
+* yrs.service   | years of service.
+* sex           | a factor with levels Female Male
+* salary        | nine-month salary, in dollars.
+
+```{r}
+head(Salaries) # the first 6 observations
+```
+
+## plots
+
+### Plot 1. Salary vs years of service for each sex
+
+```{r}
+p1 <- ggplot(data=Salaries, aes(x=yrs.service,y = salary, color=sex))+
+      geom_point() +
+      labs(x = "Years of Service", y = "Salary")+
+      ggtitle("Salary vs years of service") + 
+      geom_smooth(method = "lm", color = "black")
+
+p1
+```
+
+comments:
+
+* majority of the female professors are paid less than the market average
+* there is a positive correlation between years of service and salary variables. 
+* this is with the exception to the age group 40-60 years of service, where there is a general decrease in salary
+* with years of experience
+
+### Plot 2.1 Salary vs years since PHD for each rank 
+
+```{r}
+
+p2_1 <- ggplot(data=Salaries, aes(x=yrs.since.phd,y = salary, color=rank))+
+      geom_point() +
+      labs(x = "Years since PHD", y = "Salary")+
+      ggtitle("Salary vs years since PHD")
+
+p2_1
+```
+
+
+Comments
+
+* Salaries increase with along the journey asstProf - AssociProf - Prof
+* For each category, there is a positive correlation between salary and years since PHD
+
+### Plot 2.2 Salary vs years since PHD for each discipline
+
+```{r}
+
+p2_2 <- ggplot(data=Salaries, aes(x=yrs.since.phd,y = salary, color=discipline))+
+      geom_point() +
+      labs(x = "Years since PHD",  y = "Salary")+
+      ggtitle("Salary vs years since PHD")
+
+p2_2
+```
+
+Comments:
+
+* applied departments pay more than theoretical departments
+
+### plot 2.3 Salary vs years since PHD for each rank X discipline
+
+```{r}
+Salaries$Rank_Disc <- paste(Salaries$rank,"_", Salaries$discipline) 
+# a new variable Rank_Disc is a cross product of rank and discipline
+
+p2_3<-ggplot(data=Salaries, aes(x=yrs.since.phd,y = salary, color=Rank_Disc))+
+      geom_point() +
+      labs(x = "Years since PHD")+
+      ggtitle("Salary vs years since PHD")
+
+p2_3
+
+```
+
+Comments:
+
+* Professors in applied departments are of the highest market value
+* The properties in 2.1 and 2.2 are observed here too. 
+
+
+### Plot 3. Bar plot of counts of individuals per sex per discipline
+
+```{r}
+p3 <- ggplot(data=Salaries, aes(x=discipline, fill=sex))+
+      geom_bar(stat="count", position="dodge") + #add position="dodge" to geom_bar to have the groups next to each other
+      labs(x = "Discipline", y = "Count")+
+      ggtitle("Sex distribution by discipline") +
+      scale_fill_manual(values=c("red", "blue")) 
+
+p3
+```
+
+Comments:
+
+* In both departments the majority of professors are male. 
+* There are more professors in theoretical departments than in applied - depatments
+
+## Editing theme and scale
+
+In this section, we will change theme, legend and scale of each of the plots above to find aesthetically attractive and informative plots. 
+
+For this purpose I will create a custom theme and a custom legend guide, which will be used for the above plots. 
+
+```{r}
+
+theme_mine <- function(){ 
+    theme(
+          plot.title = element_text(color = "#213035", size = 15, face = 'plain', hjust = 0.5),
+          axis.line = element_line(linetype = "solid",size = 1),
+          axis.ticks = element_blank(), # no ticks
+          axis.text = element_text(colour = "#595959",size = 9),
+          
+          # background settings
+          panel.grid.major = element_line(linetype = "solid",
+                                          colour = "#595959",
+                                          size = 0.5
+                                           ),
+          panel.grid.minor = element_line(linetype = "solid",
+                                          colour = "#595959",
+                                          size = 0.2
+                                           ),
+          panel.background = element_rect(fill = "#ffffcf", colour = "#551155", size = 1), #panel background
+          plot.background = element_rect(colour = "#151414", size = 1), # plot background
+          
+          strip.background = element_rect(fill = NA),
+          strip.text = element_text(colour = "#595959",size = 9),
+	
+	        legend.key = element_rect(fill = '#ffffcf') # legend rectangle same color as the panel
+
+
+      )
+      }
+```
+
+
+```{r}
+
+p1 + theme_mine()
+```
+
+Custom guide for legend
+
+```{r}
+
+guide_mine <- function(){ 
+    guides(color =  guide_legend(title.position = "top",
+                                  title.hjust = 0.5,
+				  label.theme = element_text(size = 10,colour = "black",
+				                             angle = 0),
+                                     label.position = "right"),  #position relative to the label icon
+				  # ncol = 1,
+				  # reverse = FALSE,
+				  keyheight = 3, # the height of a rectangle
+          keywidth = 3,
+
+          # byrow = TRUE,
+          # override.aes = list(shape = 15, alpha = 1, size = 8),
+          title.theme = element_text(size = 15, # font size
+                                     face = "bold", # font sub-type (bold)
+                                     colour = "blue", # font color
+                                     angle = 90 )) # rotate font box
+
+}
+```
+
+
+Plots, 'p1' and 'p2_1' have better aesthetics with the theme and guide defined above
+
+```{r}
+
+p1 + theme_mine() + guide_mine()
+```
+
+```{r}
+p2_1 + theme_mine() + guide_mine()
+```
+
+### Editing Scales
+
+
+```{r}
+
+p1 + theme_mine() + guide_mine() +
+  scale_y_continuous(breaks = seq(0, 250000, by = 50000),
+                     labels = format(seq(0, 250000, by = 50000), big.mark = ","),
+                     limits = c(50000, 250000),
+                 ) +
+  scale_x_continuous(breaks = seq(0, 60,10),
+                     labels = format(seq(0, 60,10)),
+                     limits = c(0, 60),
+                 )
+   
+```
+
+```{r}
+p2_1 + theme_mine() + guide_mine() +
+  scale_y_continuous(breaks = seq(0, 250000, by = 50000),
+                     labels = format(seq(0, 250000, by = 50000), big.mark = ","),
+                     limits = c(50000, 250000),
+                 ) +
+  scale_x_continuous(breaks = seq(0, 60,10),
+                     labels = format(seq(0, 60,10)),
+                     limits = c(0, 60),
+                 )
+```
+
+
+*Editing plot 3*
+
+*p3* is a bar plot. Let's give it a different theme than defined above. 
+```{r}
+
+p3 + 
+  theme(plot.title = element_text(hjust = 0.5),# title to the middle
+        panel.background =  # panel background color and size
+            element_rect(fill = "#c1b398", colour = "#551155", size = 1),
+        plot.background =  # plot background color and size
+            element_rect(colour = "#151414", size = 1)) + 
+  
+  # rescale the y - axis for better resolution
+  scale_y_continuous(breaks = seq(0, 200, by = 25),
+                     labels = seq(0, 200, by = 25),
+                     limits = c(0, 200),
+                 )
+```
+
+                                 
+                                 
